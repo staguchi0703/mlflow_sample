@@ -1,2 +1,2 @@
 defaults:
-  - model: nn
+  - model: elasticnet

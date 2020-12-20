@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 
+
 def eval_metrics(actual, pred):
     rmse = np.sqrt(mean_squared_error(actual, pred))
     mae = mean_absolute_error(actual, pred)
@@ -45,7 +46,6 @@ def main(cfg):
             "Unable to download training & test CSV, check your internet connection. Error: %s", e
         )
 
-    # Split the data into training and test sets. (0.75, 0.25) split.
     train, test = train_test_split(data)
 
     # The predicted column is "quality" which is a scalar from [3, 9]
@@ -57,14 +57,15 @@ def main(cfg):
     alpha = cfg.model.alpha
     l1_ratio = cfg.model.l1_ratio
 
+    mlflow.set_tracking_uri('http://tracking:5000')
+    print(mlflow.get_tracking_uri())
+    with mlflow.start_run():
 
-
-    with mlflow.start_run(experiment_id='1'):
         mlflow.sklearn.autolog()
-
+        
+        
         lr = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, random_state=42)
         lr.fit(train_x, train_y)
-
         predicted_qualities = lr.predict(test_x)
 
         (rmse, mae, r2) = eval_metrics(test_y, predicted_qualities)
@@ -73,29 +74,9 @@ def main(cfg):
         print("  RMSE: %s" % rmse)
         print("  MAE: %s" % mae)
         print("  R2: %s" % r2)
-
-        # mlflow.log_param("alpha", alpha)
-        # mlflow.log_param("l1_ratio", l1_ratio)
-        # mlflow.log_metric("rmse", rmse)
-        # mlflow.log_metric("r2", r2)
-        # mlflow.log_metric("mae", mae)
-        # mlflow.log_artifact()
-
-        tracking_url_type_store = urlparse(mlflow.get_tracking_uri()).scheme
+        mlflow.sklearn.save_model(lr,"ElasticNet")
 
         
-
-        # Model registry does not work with file store
-        if tracking_url_type_store != "file":
-
-            # Register the model
-            # There are other ways to use the Model Registry, which depends on the use case,
-            # please refer to the doc for more information:
-            # https://mlflow.org/docs/latest/model-registry.html#api-workflow
-            mlflow.sklearn.log_model(
-                lr, "model", registered_model_name="ElasticnetWineModel")
-        else:
-            mlflow.sklearn.log_model(lr, "model")
 
 
 
