@@ -4,6 +4,7 @@ services:
     build: ./ml_engine/
     volumes:
       - ./ml_engine:/work/ml_engine
+      - vol_artifact:/work/ml_engine/artifact
     networks:
       - flownet
     
@@ -17,7 +18,10 @@ services:
       - flownet
     volumes:
       - ./mlruns:/mlruns
-    command: mlflow server --backend-store-uri /mlruns --host 0.0.0.0 --port 5000
+      - vol_artifact:/artifact
+    command: mlflow server --backend-store-uri /mlruns --default-artifact-root file:/artifact --host 0.0.0.0 --port 5000
+volumes:
+  vol_artifact:
 
 networks:
   flownet:

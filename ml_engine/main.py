@@ -61,8 +61,10 @@ def main(cfg):
     print(mlflow.get_tracking_uri())
     with mlflow.start_run():
 
-        mlflow.sklearn.autolog()
         
+        mlflow.sklearn.autolog()
+        mlflow.log_artifacts('/work/ml_engine/artifact')
+    
         
         lr = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, random_state=42)
         lr.fit(train_x, train_y)
@@ -74,10 +76,6 @@ def main(cfg):
         print("  RMSE: %s" % rmse)
         print("  MAE: %s" % mae)
         print("  R2: %s" % r2)
-        mlflow.sklearn.save_model(lr,"ElasticNet")
-
-        
-
 
 
 if __name__ == "__main__":
