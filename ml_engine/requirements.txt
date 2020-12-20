@@ -1,0 +1,9 @@
+altair
+autopep8
+hydra-core
+mlflow
+numpy
+pandas
+Pillow
+scikit-learn
+scipy
