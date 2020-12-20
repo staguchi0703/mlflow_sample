@@ -1,4 +1,5 @@
 FROM python:3.8
 RUN pip install mlflow
+RUN mkdir mlruns
+RUN mlflow server --backend-store-uri ./mlruns --host 0.0.0.0 &
 CMD mlflow ui -h 0.0.0.0:5000
-
