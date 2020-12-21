@@ -7,3 +7,4 @@ pandas
 Pillow
 scikit-learn
 scipy
+boto3

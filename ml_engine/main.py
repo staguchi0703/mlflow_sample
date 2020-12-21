@@ -31,7 +31,7 @@ def eval_metrics(actual, pred):
 
 @hydra.main(config_path='conf', config_name='config')
 def main(cfg):
-    os.chdir('/work')
+
     warnings.filterwarnings("ignore")
     np.random.seed(40)
 
@@ -58,13 +58,15 @@ def main(cfg):
     l1_ratio = cfg.model.l1_ratio
 
     mlflow.set_tracking_uri('http://tracking:5000')
-    print(mlflow.get_tracking_uri())
-    with mlflow.start_run():
 
-        
+
+    os.environ["MLFLOW_S3_ENDPOINT_URL"] = "http://minio:9000"
+    os.environ["AWS_ACCESS_KEY_ID"] = "minio-access-key"
+    os.environ["AWS_SECRET_ACCESS_KEY"] = "minio-secret-key"
+
+
+    with mlflow.start_run():
         mlflow.sklearn.autolog()
-        mlflow.log_artifacts('/work/ml_engine/artifact')
-    
         
         lr = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, random_state=42)
         lr.fit(train_x, train_y)
@@ -76,6 +78,13 @@ def main(cfg):
         print("  RMSE: %s" % rmse)
         print("  MAE: %s" % mae)
         print("  R2: %s" % r2)
+
+        print('where to write:', mlflow.get_artifact_uri())
+
+        mlflow.log_artifact(os.path.join(os.getcwd(), '.hydra/config.yaml'))
+        mlflow.log_artifact(os.path.join(os.getcwd(), '.hydra/hydra.yaml'))
+        mlflow.log_artifact(os.path.join(os.getcwd(), '.hydra/overrides.yaml'))
+        mlflow.log_artifact(os.path.join(os.getcwd(), 'main.log'))
 
 
 if __name__ == "__main__":

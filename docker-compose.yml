@@ -4,7 +4,6 @@ services:
     build: ./ml_engine/
     volumes:
       - ./ml_engine:/work/ml_engine
-      - vol_artifact:/work/ml_engine/artifact
     networks:
       - flownet
     
@@ -17,11 +16,47 @@ services:
     networks:
       - flownet
     volumes:
-      - ./mlruns:/mlruns
-      - vol_artifact:/artifact
-    command: mlflow server --backend-store-uri /mlruns --default-artifact-root file:/artifact --host 0.0.0.0 --port 5000
+      - vol_param:/mlruns
+    depends_on:
+      - minio
+    environment:
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+      AWS_ACCESS_KEY_ID: minio-access-key
+      AWS_SECRET_ACCESS_KEY: minio-secret-key
+    command: mlflow server --backend-store-uri /mlruns  --default-artifact-root 's3://default/' --host 0.0.0.0 --port 5000
+
+  minio:
+    image: minio/minio
+    ports:
+      - 9000:9000
+    restart: always
+    volumes:
+    - minio1:/export
+    environment:
+      MINIO_ACCESS_KEY: minio-access-key
+      MINIO_SECRET_KEY: minio-secret-key
+    command: server /export
+    networks:
+      - flownet
+
+  # minioコンテナ起動時にデフォルトのバケットを自動作成する
+  defaultbucket:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until (/usr/bin/mc config host add myminio http://minio:9000 minio-access-key minio-secret-key) do echo 'try to create buckets...' && sleep 1; done;
+      /usr/bin/mc mb myminio/default;
+      /usr/bin/mc policy download myminio/default;
+      exit 0;
+      "
+    networks:
+      - flownet
+
 volumes:
-  vol_artifact:
+  vol_param:
+  minio1: 
 
 networks:
   flownet:
